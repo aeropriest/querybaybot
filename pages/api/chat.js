@@ -1,34 +1,24 @@
-// import getGptAnswer from '@/lib/openai';
+const Telegraf = require('telegraf');
+const openai = require('openai');
+const bot = new Telegraf('6224174210:AAEgme9G0zIvBwCN8eWbJ70Lm3FO2NWNDZY');
 
-export default async function handler(req, res) {
-  console.log('Request arrived:', req.query);
-  const question = req.query.question;
-  let answer = process.env.OPENAI_API_KEY;//"Invalid question, please try again";
-//   try {
-//     answer = await getGptAnswer(question);
-//   } catch (error) {
-//     console.error(error);
-//   }
-  res.status(200).json({ answer });
-}
+openai.apiKey = "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";
 
-const axios = require("axios");
+bot.on('message', (ctx) => {
+  // Send the user's message to the ChatGPT API
+  openai
+    .engines
+    .get("davinci")
+    .completions({
+        prompt: ctx.message.text,
+        max_tokens: 50,
+        temperature: 0.5
+    })
+    .then(response => {
+    // Send the response from ChatGPT back to the user
+      ctx.reply(response.choices[0].text)
+    })
+    .catch(console.error);
+});
 
-export const getGptAnswer = async (question) => {
-  try {
-    const response = await axios.post("https://api.openai.com/v1/engines/davinci-codex/completions", {
-      prompt: `Question: ${question}\nAnswer:`,
-      max_tokens: 50, // Adjust the desired length of the answer
-      temperature: 0.7, // Adjust the temperature for controlling randomness
-    }, {
-      headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    return response.data.choices[0].text.trim();
-  } catch (error) {
-    throw new Error("Error generating GPT answer");
-  }
-};
+bot.startPolling();
